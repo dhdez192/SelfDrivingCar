@@ -39,7 +39,7 @@ def display_lines(image,lines):
             cv2.line(line_image,(x1,y1),(x2,y2), (255,0,255), 10) # draw a line corresponding to line points
     return line_image
 
-def make_coordinate(image, line_parameters):
+def make_point(image, line_parameters):
     slope, intercept = line_parameters # store parameters into variables
     y1 = image.shape[0]                # grabs only the y values of image 
     y2 = int(y1*(3/5))                  
@@ -62,29 +62,49 @@ def average_slope_intercept(image, lines):
         else:
             right_fit.append((slope, intercept))
     # take the average of the line points
-    left_fit_average = np.average(left_fit, axis=0)
-    right_fit_average = np.average(right_fit, axis=0)
-    left_line = make_coordinate(image, left_fit_average)
-    right_line = make_coordinate(image, right_fit_average)
-    return np.array([left_line, right_line])    
+    if len(left_fit) and len(right_fit):
+        left_fit_average = np.average(left_fit, axis=0)
+        right_fit_average = np.average(right_fit, axis=0)
+        left_line = make_point(image, left_fit_average)
+        right_line = make_point(image, right_fit_average)
+        return np.array([left_line, right_line])    
     
 
+
     
-# Saving the image for processing
-image = cv2.imread('test_image.jpg')
-lane_image = np.copy(image)             # creating a copy of the image
-canny_image = canny(lane_image)               # obtains filtered edge detection
-cropped_image = region_of_interest(canny_image) # highlights region of interest
-# We use Hough Transform to actively plot the lanes
-lines = cv2.HoughLinesP(cropped_image,2, np.pi/180, 100, np.array([]), minLineLength=40, maxLineGap=5)
-# Average out the slops of lines for clear lane detection
-averaged_lines = average_slope_intercept(lane_image, lines)
-line_image = display_lines(lane_image, averaged_lines)   # Lane drawing
-#Combined image of botht the image and the detected lanes
-c_image = cv2.addWeighted(lane_image, 0.8, line_image, 1, 1)
+## Saving the image for processing
+#image = cv2.imread('test_image.jpg')
+#lane_image = np.copy(image)             # creating a copy of the image
+
+# Used for Images
+#canny_image = canny(lane_image)               # obtains filtered edge detection
+#cropped_image = region_of_interest(canny_image) # highlights region of interest
+## We use Hough Transform to actively plot the lanes
+#lines = cv2.HoughLinesP(cropped_image,2, np.pi/180, 100, np.array([]), minLineLength=40, maxLineGap=5)
+## Average out the slops of lines for clear lane detection
+#averaged_lines = average_slope_intercept(lane_image, lines)
+#line_image = display_lines(lane_image, averaged_lines)   # Lane drawing
+##Combined image of botht the image and the detected lanes
+#c_image = cv2.addWeighted(lane_image, 0.8, line_image, 1, 1)
 
 
 
-cv2.imshow('result',c_image)              # Display the window
-cv2.waitKey(0)                          # Press a key to exit window
-
+# creating a capture video
+cap = cv2.VideoCapture("test2.mp4")
+while(cap.isOpened()):
+    ret, frame = cap.read()
+    if ret == True:         # Check to see if the video ends or not
+        canny_image = canny(frame)
+        cropped_image = region_of_interest(canny_image) 
+        lines = cv2.HoughLinesP(cropped_image,2, np.pi/180, 100, np.array([]), minLineLength=40, maxLineGap=5)
+        averaged_lines = average_slope_intercept(frame, lines)
+        line_image = display_lines(frame, averaged_lines)
+        c_image = cv2.addWeighted(frame, 0.8, line_image, 1, 1)
+        cv2.imshow("result",c_image)              
+        if cv2.waitKey(1) & 0xFF == ord('q'):                          
+            break
+    else:
+        break
+cap.release()
+cv2.destroyAllWindows()
+    
